@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Animal Kingdom Chess — Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { background:#050f05; color:#c8e8b0; font-family:'Fira Code',monospace; margin:0; padding:24px; }
+  h1 { font-family:'Cinzel',serif; color:#c8a832; text-align:center; font-size:2rem; margin-bottom:4px; }
+  .sub { text-align:center; color:#6a9860; letter-spacing:0.2em; font-size:0.85rem; margin-bottom:28px; }
+
+  .arch { display:flex; flex-direction:column; gap:20px; max-width:900px; margin:0 auto; }
+
+  .layer {
+    border:2px solid #2a5a2a;
+    border-radius:14px;
+    padding:18px 22px;
+    background:linear-gradient(135deg,rgba(15,35,10,0.9),rgba(8,20,5,0.95));
+    position:relative;
+  }
+  .layer-title {
+    font-family:'Cinzel',serif;
+    color:#c8a832;
+    font-size:0.95rem;
+    letter-spacing:0.12em;
+    margin-bottom:12px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .badge {
+    background:#1a4a1a; border:1px solid #3a7a3a; border-radius:6px;
+    padding:2px 8px; font-size:0.7rem; color:#7fc870; font-family:monospace;
+  }
+  .modules {
+    display:flex; flex-wrap:wrap; gap:10px;
+  }
+  .mod {
+    background:rgba(0,0,0,0.4);
+    border:1px solid #3a6a3a;
+    border-radius:10px;
+    padding:10px 14px;
+    min-width:150px;
+    transition:all 0.2s;
+  }
+  .mod:hover { border-color:#c8a832; transform:translateY(-2px); }
+  .mod-name { color:#e8d090; font-size:0.85rem; margin-bottom:4px; }
+  .mod-desc { color:#6a9860; font-size:0.72rem; line-height:1.4; }
+  .arrow { text-align:center; color:#3a7a3a; font-size:1.3rem; margin:-8px 0; }
+
+  .tech-stack {
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:6px;
+  }
+  .tech { background:#0a2a0a; border:1px solid #2a5a1a; border-radius:8px;
+    padding:5px 12px; font-size:0.78rem; color:#9dc888; }
+
+  .features { margin-top:20px; }
+  .feat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+  .feat {
+    background:rgba(10,30,8,0.8); border:1px solid #2a5a2a; border-radius:10px;
+    padding:10px; font-size:0.78rem;
+  }
+  .feat-icon { font-size:1.4rem; margin-bottom:4px; }
+  .feat-name { color:#e8d090; font-weight:600; margin-bottom:3px; font-family:'Cinzel',serif; font-size:0.8rem; }
+  .feat-text { color:#6a9860; }
+
+  .stats { display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; justify-content:center; }
+  .stat { text-align:center; }
+  .stat-num { font-size:1.8rem; color:#c8a832; font-family:'Cinzel',serif; }
+  .stat-label { font-size:0.7rem; color:#6a9860; letter-spacing:0.1em; }
+</style>
+</head>
+<body>
+<h1>🌲 Animal Kingdom Chess</h1>
+<div class="sub">ARCHITECTURE · STACK · FEATURE MAP</div>
+
+<div class="arch">
+
+  <!-- Tech Stack -->
+  <div class="layer">
+    <div class="layer-title">⚡ Technology Stack <span class="badge">Zero Dependencies</span></div>
+    <div class="tech-stack">
+      <div class="tech">🌐 HTML5</div>
+      <div class="tech">🎨 CSS3 (Variables, Animations, 3D)</div>
+      <div class="tech">⚙️ Vanilla JavaScript ES2020</div>
+      <div class="tech">🔊 Web Audio API</div>
+      <div class="tech">📡 BroadcastChannel API (Multiplayer)</div>
+      <div class="tech">🖋 Google Fonts (Cinzel + Crimson Text)</div>
+      <div class="tech">📐 CSS Grid (8×8 Board)</div>
+      <div class="tech">🎭 CSS Perspective/Transform (3D)</div>
+    </div>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <!-- Chess Engine Layer -->
+  <div class="layer">
+    <div class="layer-title">♟️ Chess Engine Layer <span class="badge">Pure JS</span></div>
+    <div class="modules">
+      <div class="mod">
+        <div class="mod-name">ChessGame class</div>
+        <div class="mod-desc">Full game state, board array 8×8, current player, en passant, check detection</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Move Generator</div>
+        <div class="mod-desc">Pseudo-move gen for all piece types + sliding pieces, castling, en passant</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Legal Move Filter</div>
+        <div class="mod-desc">Simulates each move, verifies king not left in check (pin detection)</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Check / Checkmate</div>
+        <div class="mod-desc">Square attack map, checkmate = no legal moves + in check; stalemate detection</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Move History / Undo</div>
+        <div class="mod-desc">Full board state serialization per move, undo pops stack</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Algebraic Notation</div>
+        <div class="mod-desc">Generates standard chess notation for move log display</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <!-- UI Layer -->
+  <div class="layer">
+    <div class="layer-title">🎨 UI / Rendering Layer <span class="badge">CSS3 Animations</span></div>
+    <div class="modules">
+      <div class="mod">
+        <div class="mod-name">Board Renderer</div>
+        <div class="mod-desc">Rebuilds 64-tile DOM grid, highlights selected/legal/last-move/check tiles</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Piece Renderer</div>
+        <div class="mod-desc">Emoji animals per team, drop-shadow 3D effect, hover scale animations</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Forest Background</div>
+        <div class="mod-desc">CSS radial gradients, animated fireflies, falling leaves, depth breathing</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Player Panels</div>
+        <div class="mod-desc">Active turn glow, captured pieces, live score, chess clock countdown</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Modal System</div>
+        <div class="mod-desc">Promotion chooser, game over screen, scale-in animations</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Piece Tooltip</div>
+        <div class="mod-desc">Hover info: animal name, role description, follows cursor</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <!-- Sound Layer -->
+  <div class="layer">
+    <div class="layer-title">🔊 Sound Engine <span class="badge">Web Audio API · No Files</span></div>
+    <div class="modules">
+      <div class="mod">
+        <div class="mod-name">Animal Voices</div>
+        <div class="mod-desc">🦁 Lion / 🐯 Tiger / 🦅 Eagle / 🦉 Owl / 🐘 Elephant / 🐎 Horse / 🐇 Rabbit — each unique frequency</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Game Events</div>
+        <div class="mod-desc">Move, capture, check (3 pulses), castle (2-tone), promotion (ascending arpeggio), game over</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Visualizer</div>
+        <div class="mod-desc">8 animated bars dance on each sound event</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕</div>
+
+  <!-- Multiplayer Layer -->
+  <div class="layer">
+    <div class="layer-title">🌐 Multiplayer Layer <span class="badge">BroadcastChannel</span></div>
+    <div class="modules">
+      <div class="mod">
+        <div class="mod-name">MultiplayerManager</div>
+        <div class="mod-desc">Create/join rooms via 6-char code, sends moves via BroadcastChannel (same device/browser)</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Room System</div>
+        <div class="mod-desc">Random 6-char alphanumeric code, copy-to-clipboard, join by code</div>
+      </div>
+      <div class="mod">
+        <div class="mod-name">Turn Enforcement</div>
+        <div class="mod-desc">In online mode, blocks moves when not your turn. Graceful fallback to local 2-player</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Feature Matrix -->
+<div class="features" style="max-width:900px;margin:24px auto 0;">
+  <div style="font-family:'Cinzel',serif;color:#c8a832;font-size:1.1rem;margin-bottom:14px;text-align:center;">
+    ✨ Feature Matrix
+  </div>
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-icon">🐾</div><div class="feat-name">Real Animal Pieces</div><div class="feat-text">14 unique animals, 2 themed kingdoms, emoji-native rendering</div></div>
+    <div class="feat"><div class="feat-icon">🌲</div><div class="feat-name">Forest Theme</div><div class="feat-text">Deep forest background, fireflies, falling leaves, moss textures</div></div>
+    <div class="feat"><div class="feat-icon">🎲</div><div class="feat-name">3D Board</div><div class="feat-text">CSS perspective tilt, wood grain tiles, drop shadows on pieces</div></div>
+    <div class="feat"><div class="feat-icon">🔊</div><div class="feat-name">Animal Sounds</div><div class="feat-text">Every piece has a procedural sound. No audio files needed.</div></div>
+    <div class="feat"><div class="feat-icon">🌐</div><div class="feat-name">Multiplayer</div><div class="feat-text">Local + online room system, BroadcastChannel P2P</div></div>
+    <div class="feat"><div class="feat-icon">♟️</div><div class="feat-name">Full Chess Rules</div><div class="feat-text">En passant, castling, check/checkmate, stalemate, promotion</div></div>
+    <div class="feat"><div class="feat-icon">⏱️</div><div class="feat-name">Chess Clock</div><div class="feat-text">10-min per player, warning animation, timeout detection</div></div>
+    <div class="feat"><div class="feat-icon">↩️</div><div class="feat-name">Undo</div><div class="feat-text">Full state serialization, unlimited undo stack</div></div>
+    <div class="feat"><div class="feat-icon">📜</div><div class="feat-name">Move Log</div><div class="feat-text">Algebraic notation history, scrollable panel</div></div>
+    <div class="feat"><div class="feat-icon">💡</div><div class="feat-name">Move Hints</div><div class="feat-text">Legal move highlighting (green/red) on selection</div></div>
+    <div class="feat"><div class="feat-icon">🏆</div><div class="feat-name">Victory Screen</div><div class="feat-text">Animated game-over modal with winner declaration</div></div>
+    <div class="feat"><div class="feat-icon">📱</div><div class="feat-name">Responsive</div><div class="feat-text">Works on desktop, tablet, and mobile browsers</div></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats" style="margin-top:28px;">
+  <div class="stat"><div class="stat-num">1</div><div class="stat-label">FILE</div></div>
+  <div class="stat"><div class="stat-num">~700</div><div class="stat-label">LINES JS ENGINE</div></div>
+  <div class="stat"><div class="stat-num">14</div><div class="stat-label">ANIMAL PIECES</div></div>
+  <div class="stat"><div class="stat-num">12</div><div class="stat-label">SOUND EVENTS</div></div>
+  <div class="stat"><div class="stat-num">0</div><div class="stat-label">DEPENDENCIES</div></div>
+  <div class="stat"><div class="stat-num">∞</div><div class="stat-label">FOREST MAGIC</div></div>
+</div>
+
+</body>
+</html>

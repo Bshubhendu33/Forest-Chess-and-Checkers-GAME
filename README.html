@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Animal Kingdom Chess — README</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #d4b040;
+    --gold-deep: #a07820;
+    --gold-light: #f5dc70;
+    --forest: #1a2e14;
+    --forest-mid: #243c1c;
+    --forest-light: #2e4e24;
+    --green-bright: #98d888;
+    --green-mid: #6aaa5a;
+    --green-dim: #4a7a44;
+    --cream: #f0e4cc;
+    --cream-dim: #c0aa88;
+    --text: #daf0c8;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--forest);
+    color: var(--text);
+    font-family: 'Crimson Text', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Forest background ── */
+  .forest-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(40,80,20,0.7) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 20% 100%, rgba(25,55,12,0.6) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(30,65,15,0.5) 0%, transparent 60%),
+      linear-gradient(180deg, #0e1f0a 0%, #1a2e14 40%, #142410 100%);
+  }
+
+  /* ── Fireflies ── */
+  .firefly {
+    position: fixed; width: 3px; height: 3px; border-radius: 50%;
+    background: #d0ff80; box-shadow: 0 0 6px 2px #a0e850;
+    animation: fly var(--dur, 8s) ease-in-out infinite var(--delay, 0s);
+    opacity: 0; pointer-events: none; z-index: 1;
+  }
+  @keyframes fly {
+    0%   { transform: translate(0, 0); opacity: 0; }
+    10%  { opacity: 0.9; }
+    50%  { transform: translate(var(--dx,30px), var(--dy,-40px)); opacity: 0.6; }
+    90%  { opacity: 0.8; }
+    100% { transform: translate(var(--dx2,60px), var(--dy2,20px)); opacity: 0; }
+  }
+
+  /* ── Falling leaves ── */
+  .leaf {
+    position: fixed; top: -40px; font-size: var(--sz, 18px);
+    animation: fall var(--fdur, 10s) linear infinite var(--fdelay, 0s);
+    opacity: 0.5; pointer-events: none; z-index: 1;
+    filter: sepia(0.6) hue-rotate(60deg);
+  }
+  @keyframes fall {
+    0%   { transform: translateX(0) rotate(0deg); top: -40px; opacity: 0.6; }
+    100% { transform: translateX(var(--sway, 80px)) rotate(360deg); top: 110vh; opacity: 0; }
+  }
+
+  /* ── Layout ── */
+  main { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── Hero ── */
+  .hero {
+    text-align: center;
+    padding: 70px 0 50px;
+    animation: fadeDown 1s ease both;
+  }
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-animals {
+    font-size: 3.2rem;
+    letter-spacing: 6px;
+    display: block;
+    margin-bottom: 18px;
+    animation: animalsBounce 3s ease-in-out infinite;
+  }
+  @keyframes animalsBounce {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(200,168,50,0.5), 0 4px 0 rgba(0,0,0,0.6);
+    line-height: 1.1;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  .hero-subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    color: var(--green-bright);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .hero-desc {
+    font-size: 1.2rem;
+    color: var(--cream-dim);
+    max-width: 540px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+    font-style: italic;
+  }
+
+  .play-btn {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    color: #1a1000;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-deep));
+    padding: 14px 40px;
+    border-radius: 50px;
+    text-decoration: none;
+    box-shadow: 0 4px 24px rgba(200,168,50,0.45), 0 2px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .play-btn::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+  .play-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(200,168,50,0.6), 0 2px 0 rgba(0,0,0,0.4); }
+  .play-btn:hover::after { transform: translateX(100%); }
+
+  /* ── Section ── */
+  section {
+    margin-top: 60px;
+    animation: fadeUp 0.8s ease both;
+    animation-play-state: paused;
+  }
+  section.visible { animation-play-state: running; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.35em;
+    color: var(--green-mid);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.55rem;
+    color: var(--gold);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(200,168,50,0.2);
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  /* ── Piece gallery ── */
+  .piece-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+
+  .piece-card {
+    background: linear-gradient(145deg, rgba(36,60,28,0.92), rgba(20,38,15,0.96));
+    border: 1px solid var(--green-dim);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    cursor: default;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .piece-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(200,168,50,0.08), transparent 60%);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .piece-card:hover { border-color: var(--gold); transform: translateY(-4px) scale(1.03); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .piece-card:hover::before { opacity: 1; }
+  .piece-card:hover .piece-emoji { animation: jiggle 0.4s ease; }
+  @keyframes jiggle {
+    0%,100% { transform: rotate(0) scale(1); }
+    25%      { transform: rotate(-10deg) scale(1.1); }
+    75%      { transform: rotate(10deg) scale(1.1); }
+  }
+
+  .piece-emoji { font-size: 2.2rem; display: block; margin-bottom: 8px; }
+  .piece-name  { font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--gold); font-weight: 600; }
+  .piece-role  { font-size: 0.72rem; color: var(--green-bright); margin-top: 3px; }
+  .piece-badge {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 0.6rem; font-family: 'Fira Code', monospace;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--green-dim);
+    border-radius: 4px; padding: 1px 5px; color: var(--cream-dim);
+  }
+
+  /* ── Feature cards ── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .feat-card {
+    background: rgba(28,50,22,0.88);
+    border: 1px solid var(--green-dim);
+    border-radius: 13px;
+    padding: 18px 16px;
+    transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .feat-card:hover { border-color: rgba(200,168,50,0.5); transform: translateY(-3px); }
+  .feat-icon { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+  .feat-name { font-family: 'Cinzel', serif; font-size: 0.82rem; color: var(--cream); font-weight: 600; margin-bottom: 5px; }
+  .feat-text { font-size: 0.88rem; color: #6a9860; line-height: 1.5; }
+
+  /* ── Tech stack ── */
+  .tech-list {
+    display: flex; flex-wrap: wrap; gap: 10px;
+  }
+  .tech-pill {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
+    background: rgba(10,10,10,0.25);
+    border: 1px solid var(--green-dim);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--green-bright);
+    transition: all 0.2s;
+  }
+  .tech-pill:hover { border-color: var(--gold); color: var(--gold); transform: scale(1.05); }
+
+  /* ── How to play ── */
+  .steps { display: flex; flex-direction: column; gap: 14px; }
+  .step {
+    display: flex; gap: 16px; align-items: flex-start;
+    background: rgba(26,46,20,0.75);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 16px 18px;
+    transition: border-color 0.2s;
+  }
+  .step:hover { border-color: rgba(200,168,50,0.4); }
+  .step-num {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    color: var(--gold);
+    font-weight: 700;
+    min-width: 32px;
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .step-body strong { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--cream); display: block; margin-bottom: 4px; }
+  .step-body p { font-size: 0.95rem; color: #7a9870; line-height: 1.55; }
+
+  /* ── Stats bar ── */
+  .stats-row {
+    display: flex; justify-content: space-around; flex-wrap: wrap;
+    gap: 12px;
+    background: rgba(26,46,20,0.85);
+    border: 1px solid var(--green-dim);
+    border-radius: 16px;
+    padding: 24px 16px;
+    margin-top: 60px;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 2rem;
+    color: var(--gold);
+    display: block;
+    text-shadow: 0 0 20px rgba(200,168,50,0.4);
+    animation: pulseGlow 3s ease-in-out infinite;
+  }
+  @keyframes pulseGlow {
+    0%,100% { text-shadow: 0 0 20px rgba(200,168,50,0.4); }
+    50%      { text-shadow: 0 0 40px rgba(200,168,50,0.8); }
+  }
+  .stat-label { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em; color: var(--green-mid); margin-top: 4px; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    padding-top: 30px;
+    border-top: 1px solid rgba(200,168,50,0.15);
+    font-size: 0.85rem;
+    color: var(--green-mid);
+  }
+  footer a { color: var(--gold); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .forest-divider {
+    text-align: center;
+    font-size: 1.4rem;
+    letter-spacing: 8px;
+    color: var(--green-dim);
+    margin: 40px 0;
+    opacity: 0.7;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--forest); }
+  ::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Forest atmosphere -->
+<div class="forest-bg"></div>
+
+<!-- Fireflies (JS-placed) -->
+<!-- Leaves (JS-placed) -->
+
+<main>
+
+  <!-- ── HERO ── -->
+  <section class="hero" style="animation-play-state:running">
+    <span class="hero-animals">🦁 🐅 🦅 🦏 🐺 🐗</span>
+    <h1>Animal Kingdom Chess</h1>
+    <p class="hero-subtitle">Forest Edition · Two Kingdoms · One Board</p>
+    <p class="hero-desc">
+      A fully-featured chess &amp; checkers game where the ancient kingdoms of
+      the forest wage war — no installs, no dependencies, pure browser magic.
+    </p>
+    <a class="play-btn" href="https://farhan-siddique-git.github.io/Animal-kingdom-Chess-" target="_blank">
+      ▶ &nbsp;Play Now
+    </a>
+  </section>
+
+  <div class="forest-divider">🌿 ✦ 🌿 ✦ 🌿</div>
+
+  <!-- ── PIECES ── -->
+  <section>
+    <div class="section-label">The Roster</div>
+    <h2>🐾 Animal Pieces</h2>
+    <div class="piece-grid">
+      <div class="piece-card">
+        <span class="piece-badge">King</span>
+        <span class="piece-emoji">🦁</span>
+        <div class="piece-name">Lion</div>
+        <div class="piece-role">Light Kingdom</div>
+      </div>
+      <div class="piece-card">
+        <span class="piece-badge">King</span>
+        <span class="piece-emoji">🐅</span>
+        <div class="piece-name">Tiger</div>
+        <div class="piece-role">Shadow Kingdom</div>
+      </div>
+      <div class="piece-card">
+        <span class="piece-badge">Queen</span>
+        <span class="piece-emoji">🦅</span>
+        <div class="piece-name">Eagle</div>
+        <div class="piece-role">Light Kingdom</div>
+      </div>
+      <div class="piece-card">
+        <span class="piece-badge">Queen</span>
+        <span class="piece-emoji">🦉</span>
+        <div class="piece-name">Owl</div>
+        <div class="piece-role">Shadow Kingdom</div>
+      </div>
+      <div class="piece-card">
+        <span class="piece-badge">Rook</span>
+        <span class="piece-emoji">🐘</span>
+        <div class="piece-name">Elephant</div>
+        <div class="piece-role">Both Kingdoms</div>
+      </div>
+      <div class="piece-card">
+        <span class="piece-badge">Bishop</span>
+        <span class="piece-emoji">🦊</span>
+        <div class="piece-name">Fox</div>
+        <div class="piece-role">Both Kingdoms</div>
+      </div>
+      <div class="piece-card">
+        <span class="piece-badge">Knight</span>
+        <span class="piece-emoji">🐎</span>
+        <div class="piece-name">Horse</div>
+        <div class="piece-role">Both Kingdoms</div>
+      </div>
+      <div class="piece-card">
+        <span class="piece-badge">Pawn</span>
+        <span class="piece-emoji">🐗</span>
+        <div class="piece-name">Boar</div>
+        <div class="piece-role">Both Kingdoms</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="forest-divider">🌿 ✦ 🌿 ✦ 🌿</div>
+
+  <!-- ── TECH STACK ── -->
+  <section>
+    <div class="section-label">Under the Hood</div>
+    <h2>⚙️ Technology Stack</h2>
+    <div class="tech-list">
+      <div class="tech-pill">🌐 HTML5</div>
+      <div class="tech-pill">🎨 CSS3 · Grid · 3D Transforms</div>
+      <div class="tech-pill">⚙️ Vanilla JS · ES2020</div>
+      <div class="tech-pill">🔊 Web Audio API</div>
+      <div class="tech-pill">📡 BroadcastChannel API</div>
+      <div class="tech-pill">📐 Three.js · WebGL</div>
+      <div class="tech-pill">🖋 Google Fonts · Cinzel</div>
+      <div class="tech-pill">0️⃣ Zero Dependencies</div>
+    </div>
+  </section>
+
+  <div class="forest-divider">🌿 ✦ 🌿 ✦ 🌿</div>
+
+  <!-- ── FEATURES ── -->
+  <section>
+    <div class="section-label">What's Inside</div>
+    <h2>✨ Features</h2>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <span class="feat-icon">♟️</span>
+        <div class="feat-name">Full Chess Rules</div>
+        <div class="feat-text">En passant, castling, check, checkmate, stalemate, promotion — all implemented.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🎲</span>
+        <div class="feat-name">Checkers Mode</div>
+        <div class="feat-text">Switch to full checkers with king promotion and multi-jump capture chains.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🌐</span>
+        <div class="feat-name">Multiplayer</div>
+        <div class="feat-text">Create a room, share a 6-char code — your opponent joins instantly in the same browser.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🔊</span>
+        <div class="feat-name">Animal Sounds</div>
+        <div class="feat-text">Every piece has a procedural voice synthesized in real-time. Zero audio files.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🎭</span>
+        <div class="feat-name">Animated Pieces</div>
+        <div class="feat-text">Each animal has its own idle animation — roaring lions, soaring eagles, stomping rhinos.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🌲</span>
+        <div class="feat-name">Forest Theme</div>
+        <div class="feat-text">Deep forest background, animated fireflies, falling leaves, and moss-grain board tiles.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">⏱️</span>
+        <div class="feat-name">Chess Clock</div>
+        <div class="feat-text">10 minutes per player with warning animation when time runs low.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">↩️</span>
+        <div class="feat-name">Unlimited Undo</div>
+        <div class="feat-text">Full board state serialized every move. Undo as many times as you need.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📜</span>
+        <div class="feat-name">Move Log</div>
+        <div class="feat-text">Algebraic notation history, scrollable, updates live as you play.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">💡</span>
+        <div class="feat-name">Move Hints</div>
+        <div class="feat-text">Legal moves highlighted in green on selection. Illegal squares shown in red.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📐</span>
+        <div class="feat-name">3D Board</div>
+        <div class="feat-text">CSS perspective tilt, wood grain tiles, drop shadows giving real depth.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📱</span>
+        <div class="feat-name">Responsive</div>
+        <div class="feat-text">Plays well on desktop, tablet, and mobile browsers alike.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="forest-divider">🌿 ✦ 🌿 ✦ 🌿</div>
+
+  <!-- ── HOW TO PLAY ── -->
+  <section>
+    <div class="section-label">Getting Started</div>
+    <h2>🎮 How to Play</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Open the game</strong>
+          <p>Click <em>Play Now</em> above, or open <code>index.html</code> directly in any modern browser. No install, no server, no build step needed.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Choose your mode</strong>
+          <p>Switch between <strong>Chess</strong> and <strong>Checkers</strong> using the toggle in the top bar. Both modes are fully implemented with all standard rules.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Click to move</strong>
+          <p>Select a piece to see its legal moves highlighted. Click a highlighted square to move. Captures, castling, and en passant happen automatically.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>Play online</strong>
+          <p>Hit <em>Create Room</em> to get a 6-character code, share it with your opponent — they open the game, click <em>Join Room</em>, enter the code, and you're connected.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="forest-divider">🌿 ✦ 🌿 ✦ 🌿</div>
+
+  <!-- ── STATS ── -->
+  <div class="stats-row">
+    <div class="stat"><span class="stat-num">1</span><div class="stat-label">File</div></div>
+    <div class="stat"><span class="stat-num">~700</span><div class="stat-label">Lines JS Engine</div></div>
+    <div class="stat"><span class="stat-num">14</span><div class="stat-label">Animal Pieces</div></div>
+    <div class="stat"><span class="stat-num">12</span><div class="stat-label">Sound Events</div></div>
+    <div class="stat"><span class="stat-num">0</span><div class="stat-label">Dependencies</div></div>
+    <div class="stat"><span class="stat-num">∞</span><div class="stat-label">Forest Magic</div></div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <p style="margin-bottom:8px">Built with 🌿 and zero dependencies &nbsp;·&nbsp; <a href="https://farhan-siddique-git.github.io/Animal-kingdom-Chess-" target="_blank">Play the Game</a></p>
+    <p>Chrome 80+ · Firefox 75+ · Safari 14+ · Edge 80+</p>
+  </footer>
+
+</main>
+
+<script>
+  // ── Fireflies ──
+  for(let i=0;i<18;i++){
+    const f=document.createElement('div');
+    f.className='firefly';
+    f.style.cssText=`
+      left:${Math.random()*100}vw;
+      top:${20+Math.random()*70}vh;
+      --dur:${6+Math.random()*8}s;
+      --delay:${-Math.random()*10}s;
+      --dx:${(Math.random()-0.5)*120}px;
+      --dy:${(Math.random()-0.5)*80}px;
+      --dx2:${(Math.random()-0.5)*160}px;
+      --dy2:${(Math.random()-0.5)*100}px;
+    `;
+    document.body.appendChild(f);
+  }
+
+  // ── Leaves ──
+  const leafEmojis=['🍃','🍂','🌿'];
+  for(let i=0;i<12;i++){
+    const l=document.createElement('div');
+    l.className='leaf';
+    l.textContent=leafEmojis[Math.floor(Math.random()*leafEmojis.length)];
+    l.style.cssText=`
+      left:${Math.random()*100}vw;
+      --sz:${14+Math.random()*12}px;
+      --fdur:${8+Math.random()*10}s;
+      --fdelay:${-Math.random()*15}s;
+      --sway:${(Math.random()-0.5)*140}px;
+    `;
+    document.body.appendChild(l);
+  }
+
+  // ── Scroll-triggered section reveals ──
+  const observer=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+  },{threshold:0.12});
+  document.querySelectorAll('section:not(.hero)').forEach(s=>observer.observe(s));
+</script>
+</body>
+</html>

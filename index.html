@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forest Kingdom — Animal Chess & Checkers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --moss:#3b5d2f; --moss-deep:#22351b; --bark:#5b3a21; --bark-dark:#3a2614;
+    --cream:#f3e9cf; --gold:#e6b450; --gold-deep:#b9842f; --leaf:#7fb05a;
+    --ink:#2a1f12; --glass:rgba(28,40,22,.78);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;font-family:'Quicksand',sans-serif;background:#0e160b;color:var(--cream)}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+
+  /* ---------- HUD ---------- */
+  .hud{position:absolute;pointer-events:none;z-index:5}
+  .panel{pointer-events:auto;background:var(--glass);backdrop-filter:blur(8px);
+    border:1px solid rgba(230,180,80,.35);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+  /* top bar */
+  #topbar{top:16px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;
+    padding:10px 16px}
+  #title{font-family:'Cinzel Decorative',serif;font-weight:900;letter-spacing:.5px;
+    font-size:20px;color:var(--gold);text-shadow:0 2px 0 #00000060;line-height:1}
+  #title small{display:block;font-family:'Quicksand';font-weight:600;font-size:10.5px;
+    letter-spacing:2px;color:#cde0b8;text-shadow:none;margin-top:3px}
+  .divider{width:1px;height:34px;background:rgba(230,180,80,.3)}
+  .btn{font-family:'Quicksand';font-weight:700;font-size:13px;color:var(--cream);
+    background:linear-gradient(180deg,#4a6b35,#2f4a22);border:1px solid rgba(230,180,80,.4);
+    padding:9px 14px;border-radius:11px;cursor:pointer;transition:.15s;white-space:nowrap;
+    box-shadow:0 3px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.12)}
+  .btn:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+  .btn.on{background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#2a1c06}
+  .modepick{display:flex;align-items:center;gap:8px;background:rgba(20,30,16,.55);
+    border:1px solid rgba(230,180,80,.45);border-radius:13px;padding:5px 8px 5px 11px}
+  .modelabel{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold)}
+  .seg{display:flex;gap:4px;background:rgba(0,0,0,.28);border-radius:10px;padding:3px}
+  .seg .btn{border:1px solid transparent;border-radius:8px;box-shadow:none;background:transparent;
+    color:#d6e6c2;font-size:13.5px;padding:7px 14px;transition:.18s}
+  .seg .btn:hover{background:rgba(255,255,255,.07);transform:none}
+  .seg .btn.on{background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#2a1c06;
+    border-color:rgba(255,255,255,.3);box-shadow:0 2px 8px rgba(230,180,80,.4),inset 0 1px 0 rgba(255,255,255,.4)}
+
+  /* turn indicator */
+  #turnbox{top:90px;left:50%;transform:translateX(-50%);padding:8px 18px;display:flex;
+    gap:10px;align-items:center;font-weight:700;font-size:15px;transition:.3s}
+  #turnDot{width:14px;height:14px;border-radius:50%;box-shadow:0 0 12px currentColor}
+  #status{color:var(--gold);font-weight:700}
+
+  /* side legend */
+  #legend{top:90px;left:16px;padding:12px 14px;width:178px}
+  #legend h4{font-family:'Cinzel Decorative';color:var(--gold);font-size:13px;margin-bottom:8px;
+    letter-spacing:.5px;border-bottom:1px solid rgba(230,180,80,.25);padding-bottom:6px}
+  .legrow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:3px 0;cursor:pointer;border-radius:8px;transition:.12s}
+  .legrow:hover{background:rgba(230,180,80,.12)}
+  .legrow .em{font-size:19px;width:24px;text-align:center}
+  .legrow b{color:#dff0c8}
+
+  /* captured trays */
+  .tray{bottom:16px;padding:8px 12px;min-width:120px;max-width:300px}
+  #trayW{left:16px}
+  #trayB{right:16px}
+  .tray h5{font-size:10.5px;letter-spacing:1.5px;color:#cde0b8;margin-bottom:5px;font-weight:600}
+  .tray .row{display:flex;flex-wrap:wrap;gap:2px;font-size:18px;min-height:22px}
+  .tray .score{float:right;color:var(--gold);font-weight:700}
+
+  /* hint */
+  #hint{bottom:18px;left:50%;transform:translateX(-50%);font-size:11.5px;color:#bcd0a4;
+    background:rgba(0,0,0,.35);padding:6px 14px;border-radius:20px;letter-spacing:.3px}
+
+  /* banner */
+  #banner{top:50%;left:50%;transform:translate(-50%,-50%) scale(.7);opacity:0;pointer-events:none;
+    text-align:center;padding:26px 40px;transition:.4s cubic-bezier(.2,1.4,.4,1);z-index:30}
+  #banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  #banner .big{font-family:'Cinzel Decorative';font-size:42px;font-weight:900;color:var(--gold);
+    text-shadow:0 4px 0 #00000050;line-height:1.05}
+  #banner .sub{font-size:16px;margin-top:8px;color:#e8f3d6}
+  #banner .btn{margin-top:18px;pointer-events:auto}
+
+  /* loading */
+  #loader{position:fixed;inset:0;background:#0e160b;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;z-index:50;gap:14px;transition:.6s}
+  #loader.hide{opacity:0;pointer-events:none}
+  #loader .ld{font-family:'Cinzel Decorative';color:var(--gold);font-size:28px;letter-spacing:1px}
+  #loader .leaf{font-size:46px;animation:spin 1.4s ease-in-out infinite}
+  @keyframes spin{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+
+  @media(max-width:760px){
+    #legend{display:none}#title{font-size:16px}.btn{padding:8px 10px;font-size:12px}
+    #banner .big{font-size:30px}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- LOADER -->
+<div id="loader"><div class="leaf">🍃</div><div class="ld">Forest Kingdom</div>
+  <div style="color:#9fb886;font-size:13px">Awakening the woodland board…</div></div>
+
+<!-- TOP BAR -->
+<div id="topbar" class="hud panel">
+  <div id="title">Forest Kingdom<small>ANIMAL CHESS · CHECKERS</small></div>
+  <div class="divider"></div>
+  <div class="modepick">
+    <span class="modelabel">MODE</span>
+    <div class="seg">
+      <button class="btn on" id="mChess">♟ Chess</button>
+      <button class="btn" id="mCheck">⛁ Checkers</button>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <button class="btn" id="aiBtn">🤖 vs Computer: OFF</button>
+  <button class="btn on" id="sndBtn">🔊 Sound</button>
+  <button class="btn" id="resetBtn">↺ New Game</button>
+</div>
+
+<!-- TURN -->
+<div id="turnbox" class="hud panel"><div id="turnDot"></div><span id="turnTxt">White to move</span>
+  <span id="status"></span></div>
+
+<!-- LEGEND -->
+<div id="legend" class="hud panel">
+  <h4 id="legTitle">🌲 The Woodland Court</h4>
+  <div id="legBody"></div>
+</div>
+
+<!-- CAPTURED -->
+<div id="trayW" class="tray hud panel"><h5>WHITE'S CATCH <span class="score" id="scoreW">0</span></h5><div class="row" id="capW"></div></div>
+<div id="trayB" class="tray hud panel"><h5>DARK'S CATCH <span class="score" id="scoreB">0</span></h5><div class="row" id="capB"></div></div>
+
+<div id="hint" class="hud">🖱️ Drag to orbit · scroll to zoom · click a creature, then its glowing path</div>
+
+<!-- BANNER -->
+<div id="banner" class="hud panel"><div class="big" id="bnBig">Checkmate!</div>
+  <div class="sub" id="bnSub"></div><button class="btn on" id="bnBtn">Play Again</button></div>
+
+<script>
+/* =====================================================================
+   FOREST KINGDOM — Animal Chess & Checkers (Three.js r128)
+   Pieces: real forest animals · synthesized animal sounds · 3D forest
+   ===================================================================== */
+
+/* ---------- Animal mapping ---------- */
+const CHESS_ANIMALS = {
+  K:{emoji:'🦁',name:'Lion',role:'King'},
+  Q:{emoji:'🐅',name:'Tiger',role:'Queen'},
+  R:{emoji:'🦏',name:'Rhino',role:'Rook'},
+  B:{emoji:'🦅',name:'Eagle',role:'Bishop'},
+  N:{emoji:'🐺',name:'Wolf',role:'Knight'},
+  P:{emoji:'🐗',name:'Boar',role:'Pawn'}
+};
+const CHECK_ANIMALS = { w:{emoji:'🐺',name:'Wolf'}, b:{emoji:'🐅',name:'Tiger'} };
+const VALUE = {P:1,N:3,B:3,R:5,Q:9,K:0};
+
+/* =====================================================================
+   1. AUDIO ENGINE — synthesized animal & game sounds (no external files)
+   ===================================================================== */
+const Audio = (()=>{
+  let ctx=null, on=true, master=null;
+  function init(){ if(ctx) return; ctx=new (window.AudioContext||window.webkitAudioContext)();
+    master=ctx.createGain(); master.gain.value=.5; master.connect(ctx.destination); }
+  function setOn(v){on=v;}
+  function noiseBuf(d){const n=ctx.sampleRate*d;const b=ctx.createBuffer(1,n,ctx.sampleRate);
+    const o=b.getChannelData(0);for(let i=0;i<n;i++)o[i]=Math.random()*2-1;return b;}
+  function env(g,t0,a,d,peak){g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(peak,t0+a);
+    g.gain.exponentialRampToValueAtTime(.0001,t0+a+d);}
+  function tone(type,f0,f1,t0,dur,peak,vibrato){
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;
+    o.frequency.setValueAtTime(f0,t0);o.frequency.exponentialRampToValueAtTime(Math.max(f1,1),t0+dur);
+    if(vibrato){const lfo=ctx.createOscillator(),lg=ctx.createGain();lfo.frequency.value=vibrato.rate;
+      lg.gain.value=vibrato.depth;lfo.connect(lg);lg.connect(o.frequency);lfo.start(t0);lfo.stop(t0+dur);}
+    env(g,t0,.02,dur,peak);o.connect(g);g.connect(master);o.start(t0);o.stop(t0+dur+.05);}
+  function growl(t0,base,dur,rough){
+    const o=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';
+    o.frequency.setValueAtTime(base,t0);o.frequency.linearRampToValueAtTime(base*0.7,t0+dur);
+    const lfo=ctx.createOscillator(),lg=ctx.createGain();lfo.type='square';lfo.frequency.value=rough;
+    lg.gain.value=base*0.25;lfo.connect(lg);lg.connect(o.frequency);lfo.start(t0);lfo.stop(t0+dur);
+    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=900;
+    env(g,t0,.04,dur,.5);o.connect(f);f.connect(g);g.connect(master);o.start(t0);o.stop(t0+dur+.05);}
+  function noiseHit(t0,dur,peak,cut){const s=ctx.createBufferSource();s.buffer=noiseBuf(dur+.1);
+    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=cut;const g=ctx.createGain();
+    env(g,t0,.005,dur,peak);s.connect(f);f.connect(g);g.connect(master);s.start(t0);s.stop(t0+dur+.1);}
+
+  const sounds={
+    // — distinct call per animal (names match CHESS_ANIMALS / CHECK_ANIMALS) —
+    Lion(t){growl(t,150,.55,26);noiseHit(t,.5,.2,800);tone('sawtooth',210,90,t+.05,.45,.18);},      // deep roar
+    Tiger(t){growl(t,185,.45,34);noiseHit(t,.4,.22,1100);tone('sawtooth',330,150,t,.3,.18);},        // snarl
+    Rhino(t){growl(t,75,.5,12);noiseHit(t,.45,.3,420);tone('square',110,55,t,.35,.2);},              // low bellow/snort
+    Eagle(t){tone('sawtooth',2200,1500,t,.14,.26,{rate:30,depth:150});tone('sawtooth',1800,2500,t+.15,.12,.22);noiseHit(t,.08,.05,4000);}, // screech
+    Wolf(t){tone('sine',380,650,t,.5,.32,{rate:5,depth:38});tone('sine',280,500,t+.06,.5,.18);tone('sine',640,560,t+.45,.18,.16);}, // howl
+    Boar(t){growl(t,150,.15,42);noiseHit(t,.14,.24,1100);tone('square',240,170,t+.18,.12,.16);growl(t+.18,150,.14,42);}, // grunt-snort
+    // — game cues —
+    move(t){noiseHit(t,.045,.1,2400);tone('sine',440,320,t,.05,.08);},
+    capture(t){noiseHit(t,.16,.45,1200);tone('square',220,70,t,.16,.2);},
+    laugh(t){for(let i=0;i<4;i++){const tt=t+i*0.135,f=360-i*30;
+      tone('sawtooth',f,f*0.82,tt,0.1,0.2,{rate:18,depth:22});tone('square',f*1.5,f*1.3,tt,0.07,0.05);}},
+    check(t){tone('triangle',880,880,t,.12,.25);tone('triangle',1175,1175,t+.13,.16,.25);},
+    win(t){[523,659,784,1046].forEach((f,i)=>tone('triangle',f,f,t+i*.13,.3,.28));},
+    select(t){tone('sine',660,880,t,.07,.12);}
+  };
+  function play(name){ if(!on) return; init(); if(ctx.state==='suspended')ctx.resume();
+    const fn=sounds[name]; if(fn) fn(ctx.currentTime); }
+  return {play,setOn,init};
+})();
+
+/* =====================================================================
+   2. CHESS ENGINE — full legal moves, check, castling, en passant, promo
+   ===================================================================== */
+const Chess = (()=>{
+  function start(){
+    const b=Array.from({length:8},()=>Array(8).fill(null));
+    const back=['R','N','B','Q','K','B','N','R'];
+    for(let f=0;f<8;f++){b[0][f]={type:back[f],color:'w'};b[1][f]={type:'P',color:'w'};
+      b[6][f]={type:'P',color:'b'};b[7][f]={type:back[f],color:'b'};}
+    return b;
+  }
+  const inB=(r,f)=>r>=0&&r<8&&f>=0&&f<8;
+  const clone=b=>b.map(r=>r.map(c=>c?{...c}:null));
+
+  function isAttacked(b,r,f,by){
+    const d=by==='w'?1:-1;
+    for(const df of[-1,1]){const sr=r-d,sf=f+df;if(inB(sr,sf)){const q=b[sr][sf];if(q&&q.color===by&&q.type==='P')return true;}}
+    for(const[dr,df]of[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]]){
+      const sr=r+dr,sf=f+df;if(inB(sr,sf)){const q=b[sr][sf];if(q&&q.color===by&&q.type==='N')return true;}}
+    for(let dr=-1;dr<=1;dr++)for(let df=-1;df<=1;df++){if(!dr&&!df)continue;const sr=r+dr,sf=f+df;
+      if(inB(sr,sf)){const q=b[sr][sf];if(q&&q.color===by&&q.type==='K')return true;}}
+    for(const[dr,df]of[[1,1],[1,-1],[-1,1],[-1,-1]]){let sr=r+dr,sf=f+df;
+      while(inB(sr,sf)){const q=b[sr][sf];if(q){if(q.color===by&&(q.type==='B'||q.type==='Q'))return true;break;}sr+=dr;sf+=df;}}
+    for(const[dr,df]of[[1,0],[-1,0],[0,1],[0,-1]]){let sr=r+dr,sf=f+df;
+      while(inB(sr,sf)){const q=b[sr][sf];if(q){if(q.color===by&&(q.type==='R'||q.type==='Q'))return true;break;}sr+=dr;sf+=df;}}
+    return false;
+  }
+  function findKing(b,c){for(let r=0;r<8;r++)for(let f=0;f<8;f++){const q=b[r][f];if(q&&q.type==='K'&&q.color===c)return[r,f];}return null;}
+  function inCheck(b,c){const k=findKing(b,c);return k?isAttacked(b,k[0],k[1],c==='w'?'b':'w'):false;}
+
+  function pseudo(b,r,f,st){
+    const p=b[r][f];if(!p)return[];const m=[],c=p.color,e=c==='w'?'b':'w';
+    const add=(tr,tf,o={})=>m.push({fr:r,ff:f,tr,tf,...o});
+    if(p.type==='P'){
+      const d=c==='w'?1:-1,sr=c==='w'?1:6;
+      if(inB(r+d,f)&&!b[r+d][f]){add(r+d,f);if(r===sr&&!b[r+2*d][f])add(r+2*d,f,{dbl:true});}
+      for(const df of[-1,1]){const tr=r+d,tf=f+df;if(inB(tr,tf)){
+        if(b[tr][tf]&&b[tr][tf].color===e)add(tr,tf,{cap:true});
+        else if(st.ep&&st.ep.r===tr&&st.ep.f===tf)add(tr,tf,{cap:true,ep:true});}}
+    }else if(p.type==='N'){
+      for(const[dr,df]of[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]]){
+        const tr=r+dr,tf=f+df;if(inB(tr,tf)){if(!b[tr][tf])add(tr,tf);else if(b[tr][tf].color===e)add(tr,tf,{cap:true});}}
+    }else if(p.type==='K'){
+      for(let dr=-1;dr<=1;dr++)for(let df=-1;df<=1;df++){if(!dr&&!df)continue;const tr=r+dr,tf=f+df;
+        if(inB(tr,tf)){if(!b[tr][tf])add(tr,tf);else if(b[tr][tf].color===e)add(tr,tf,{cap:true});}}
+      // castling
+      const rank=c==='w'?0:7;
+      if(r===rank&&f===4&&!inCheck(b,c)){
+        if(st.castle[c+'K']&&!b[rank][5]&&!b[rank][6]&&b[rank][7]&&b[rank][7].type==='R'&&
+           !isAttacked(b,rank,5,e)&&!isAttacked(b,rank,6,e))add(rank,6,{castle:'K'});
+        if(st.castle[c+'Q']&&!b[rank][3]&&!b[rank][2]&&!b[rank][1]&&b[rank][0]&&b[rank][0].type==='R'&&
+           !isAttacked(b,rank,3,e)&&!isAttacked(b,rank,2,e))add(rank,2,{castle:'Q'});
+      }
+    }else{
+      let dirs=[];if(p.type==='B'||p.type==='Q')dirs.push([1,1],[1,-1],[-1,1],[-1,-1]);
+      if(p.type==='R'||p.type==='Q')dirs.push([1,0],[-1,0],[0,1],[0,-1]);
+      for(const[dr,df]of dirs){let tr=r+dr,tf=f+df;while(inB(tr,tf)){
+        if(!b[tr][tf])add(tr,tf);else{if(b[tr][tf].color===e)add(tr,tf,{cap:true});break;}tr+=dr;tf+=df;}}
+    }
+    return m;
+  }
+  // apply move to a board copy + new state (does not mutate inputs)
+  function apply(b,st,mv){
+    const nb=clone(b),ns={ep:null,castle:{...st.castle}};
+    const p=nb[mv.fr][mv.ff];nb[mv.tr][mv.tf]=p;nb[mv.fr][mv.ff]=null;
+    if(mv.ep){const cr=mv.fr;nb[cr][mv.tf]=null;}
+    if(mv.dbl)ns.ep={r:(mv.fr+mv.tr)/2,f:mv.ff};
+    if(p.type==='P'&&(mv.tr===0||mv.tr===7))p.type='Q'; // auto-promote to Bear(Queen)
+    if(mv.castle){const rank=mv.tr;if(mv.castle==='K'){nb[rank][5]=nb[rank][7];nb[rank][7]=null;}
+      else{nb[rank][3]=nb[rank][0];nb[rank][0]=null;}}
+    if(p.type==='K'){ns.castle[p.color+'K']=false;ns.castle[p.color+'Q']=false;}
+    if(p.type==='R'){const rank=p.color==='w'?0:7;if(mv.fr===rank&&mv.ff===0)ns.castle[p.color+'Q']=false;
+      if(mv.fr===rank&&mv.ff===7)ns.castle[p.color+'K']=false;}
+    // rook captured removes rights
+    [['w',0,0,'wQ'],['w',0,7,'wK'],['b',7,0,'bQ'],['b',7,7,'bK']].forEach(([,rr,ff,key])=>{
+      if(mv.tr===rr&&mv.tf===ff)ns.castle[key]=false;});
+    return {b:nb,st:ns};
+  }
+  function legal(b,st,c){
+    const out=[];
+    for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=b[r][f];if(p&&p.color===c){
+      for(const mv of pseudo(b,r,f,st)){const{b:nb}=apply(b,st,mv);if(!inCheck(nb,c))out.push(mv);}}}
+    return out;
+  }
+  return {start,legal,apply,inCheck,findKing,inB,clone};
+})();
+
+/* =====================================================================
+   3. CHECKERS ENGINE — forced captures, multi-jumps, kinging
+   ===================================================================== */
+const Checkers = (()=>{
+  // dark squares only: (r+f)%2===1.  red 'w' moves up(+r), dark 'b' moves down(-r)
+  function start(){
+    const b=Array.from({length:8},()=>Array(8).fill(null));
+    for(let r=0;r<8;r++)for(let f=0;f<8;f++){if((r+f)%2===1){
+      if(r<3)b[r][f]={color:'w',king:false};
+      else if(r>4)b[r][f]={color:'b',king:false};}}
+    return b;
+  }
+  const inB=(r,f)=>r>=0&&r<8&&f>=0&&f<8;
+  function dirsFor(p){if(p.king)return[[1,1],[1,-1],[-1,1],[-1,-1]];
+    return p.color==='w'?[[1,1],[1,-1]]:[[-1,1],[-1,-1]];}
+  function jumps(b,r,f){const p=b[r][f];if(!p)return[];const e=p.color==='w'?'b':'w';const out=[];
+    for(const[dr,df]of dirsFor(p)){const mr=r+dr,mf=f+df,tr=r+2*dr,tf=f+2*df;
+      if(inB(tr,tf)&&b[mr][mf]&&b[mr][mf].color===e&&!b[tr][tf])out.push({fr:r,ff:f,tr,tf,cr:mr,cf:mf});}
+    return out;}
+  function steps(b,r,f){const p=b[r][f];if(!p)return[];const out=[];
+    for(const[dr,df]of dirsFor(p)){const tr=r+dr,tf=f+df;if(inB(tr,tf)&&!b[tr][tf])out.push({fr:r,ff:f,tr,tf});}
+    return out;}
+  function allJumps(b,c){const o=[];for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=b[r][f];
+    if(p&&p.color===c)o.push(...jumps(b,r,f));}return o;}
+  function legal(b,c){const j=allJumps(b,c);if(j.length)return j; // forced capture
+    const o=[];for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=b[r][f];if(p&&p.color===c)o.push(...steps(b,r,f));}
+    return o;}
+  function apply(b,mv){const nb=b.map(r=>r.map(c=>c?{...c}:null));const p=nb[mv.fr][mv.ff];
+    nb[mv.tr][mv.tf]=p;nb[mv.fr][mv.ff]=null;if(mv.cr!==undefined)nb[mv.cr][mv.cf]=null;
+    if((p.color==='w'&&mv.tr===7)||(p.color==='b'&&mv.tr===0))p.king=true;return nb;}
+  return {start,legal,apply,jumps,inB};
+})();
+
+/* =====================================================================
+   4. 3D SCENE — forest, board, animal pieces
+   ===================================================================== */
+let scene,camera,renderer,raycaster,mouse;
+let boardGroup,pieceGroup,markerGroup,treeGroup;
+const SQ=1.0, BOARD=8;
+let camOrbit={theta:Math.PI*0.5, phi:0.95, rad:13, tx:0, tz:0};
+let drag=null;
+const clock={t:0};
+
+function setupScene(){
+  scene=new THREE.Scene();
+  scene.fog=new THREE.FogExp2(0xcdd9bf,0.017);
+
+  // sky gradient sphere
+  const skyGeo=new THREE.SphereGeometry(120,32,16);
+  const c=document.createElement('canvas');c.width=2;c.height=256;const cx=c.getContext('2d');
+  const g=cx.createLinearGradient(0,0,0,256);
+  g.addColorStop(0,'#8fc3e6');g.addColorStop(.42,'#cfe4c4');g.addColorStop(.72,'#f0e3b2');g.addColorStop(1,'#f6dba0');
+  cx.fillStyle=g;cx.fillRect(0,0,2,256);
+  const skyTex=new THREE.CanvasTexture(c);skyTex.encoding=THREE.sRGBEncoding;
+  scene.add(new THREE.Mesh(skyGeo,new THREE.MeshBasicMaterial({map:skyTex,side:THREE.BackSide,fog:false})));
+
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+  document.getElementById('app').appendChild(renderer.domElement);
+
+  camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,300);
+
+  // dramatic, contrasty lighting for a cinematic feel
+  scene.add(new THREE.HemisphereLight(0xbfe0ff,0x36441f,0.55));
+  const sun=new THREE.DirectionalLight(0xfff0cb,2.0);
+  sun.position.set(9,17,7);sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);const s=12;
+  sun.shadow.camera.left=-s;sun.shadow.camera.right=s;sun.shadow.camera.top=s;sun.shadow.camera.bottom=-s;
+  sun.shadow.camera.near=1;sun.shadow.camera.far=50;sun.shadow.bias=-0.0004;
+  scene.add(sun);
+  const rim=new THREE.DirectionalLight(0x9ec4ff,0.7);rim.position.set(-9,5,-10);scene.add(rim); // cool back rim
+  const warm=new THREE.PointLight(0xffae5a,0.5,30);warm.position.set(-4,4,4);scene.add(warm);
+  scene.add(new THREE.AmbientLight(0xffffff,0.16));
+
+  // ground (forest floor)
+  const gc=document.createElement('canvas');gc.width=gc.height=256;const gx=gc.getContext('2d');
+  gx.fillStyle='#47692f';gx.fillRect(0,0,256,256);
+  for(let i=0;i<2600;i++){gx.fillStyle=`rgba(${30+Math.random()*60},${70+Math.random()*70},${20+Math.random()*40},.5)`;
+    gx.fillRect(Math.random()*256,Math.random()*256,2,2);}
+  const gTex=new THREE.CanvasTexture(gc);gTex.encoding=THREE.sRGBEncoding;gTex.wrapS=gTex.wrapT=THREE.RepeatWrapping;gTex.repeat.set(12,12);
+  const ground=new THREE.Mesh(new THREE.CircleGeometry(60,48),
+    new THREE.MeshLambertMaterial({map:gTex}));
+  ground.rotation.x=-Math.PI/2;ground.position.y=-0.26;ground.receiveShadow=true;scene.add(ground);
+
+  raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();
+  boardGroup=new THREE.Group();pieceGroup=new THREE.Group();
+  markerGroup=new THREE.Group();treeGroup=new THREE.Group();
+  scene.add(boardGroup,pieceGroup,markerGroup,treeGroup);
+
+  buildBoardBase();buildForest();
+  bindControls();updateCamera();
+  animate();
+}
+
+function buildBoardBase(){
+  while(boardGroup.children.length)boardGroup.remove(boardGroup.children[0]);
+  // wooden base plinth
+  const base=new THREE.Mesh(new THREE.BoxGeometry(BOARD+1.1,0.5,BOARD+1.1),
+    new THREE.MeshLambertMaterial({color:0x4a3320}));
+  base.position.y=-0.3;base.castShadow=true;base.receiveShadow=true;boardGroup.add(base);
+  const rim=new THREE.Mesh(new THREE.BoxGeometry(BOARD+0.5,0.18,BOARD+0.5),
+    new THREE.MeshLambertMaterial({color:0x6b4a2b}));
+  rim.position.y=-0.02;rim.receiveShadow=true;boardGroup.add(rim);
+  const half=(BOARD-1)/2;
+  for(let r=0;r<8;r++)for(let f=0;f<8;f++){
+    const dark=(r+f)%2===0;
+    const base=dark?0x2f4a26:0xbfcf8f; // mossy dark / pale moss
+    const jit=0.88+Math.random()*0.18; // subtle natural tone variation per square
+    const col=shade(base,jit);
+    const sq=new THREE.Mesh(new THREE.BoxGeometry(SQ*0.98,0.12,SQ*0.98),
+      new THREE.MeshStandardMaterial({color:col,roughness:0.95,metalness:0.02}));
+    sq.position.set((f-half)*SQ,0.06,(r-half)*SQ);
+    sq.receiveShadow=true;sq.userData={sq:true,r,f};boardGroup.add(sq);
+  }
+}
+function sqPos(r,f){const half=(BOARD-1)/2;return{x:(f-half)*SQ,z:(r-half)*SQ};}
+
+function buildForest(){
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  function tree(x,z,s){
+    const g=new THREE.Group();
+    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.12*s,0.18*s,1.1*s,7),
+      new THREE.MeshLambertMaterial({color:0x5b3a21}));
+    trunk.position.y=0.55*s;trunk.castShadow=true;g.add(trunk);
+    const greens=[0x2f5a2a,0x3d6b2f,0x4f7a35];
+    for(let i=0;i<3;i++){const cone=new THREE.Mesh(
+      new THREE.ConeGeometry((0.95-i*0.18)*s,(1.0)*s,8),
+      new THREE.MeshLambertMaterial({color:greens[i%3]}));
+      cone.position.y=(1.1+i*0.6)*s;cone.castShadow=true;g.add(cone);}
+    g.position.set(x,0,z);g.rotation.y=rand(0,6.28);treeGroup.add(g);
+  }
+  function bush(x,z,s){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(0.5*s,0),
+    new THREE.MeshLambertMaterial({color:0x3f6b30,flatShading:true}));
+    m.position.set(x,0.25*s,z);m.castShadow=true;treeGroup.add(m);}
+  function rock(x,z,s){const m=new THREE.Mesh(new THREE.IcosahedronGeometry(0.45*s,0),
+    new THREE.MeshLambertMaterial({color:0x7d7d75,flatShading:true}));
+    m.position.set(x,0.18*s,z);m.rotation.set(rand(0,3),rand(0,3),rand(0,3));m.castShadow=true;treeGroup.add(m);}
+  // ring of trees around the board
+  const R=8;
+  for(let i=0;i<26;i++){const a=(i/26)*6.28+rand(-.1,.1);const rr=R+rand(0,8);
+    tree(Math.cos(a)*rr,Math.sin(a)*rr,rand(0.8,1.6));}
+  for(let i=0;i<14;i++){const a=Math.random()*6.28;const rr=R-1.2+rand(0,5);
+    bush(Math.cos(a)*rr,Math.sin(a)*rr,rand(0.7,1.3));}
+  for(let i=0;i<8;i++){const a=Math.random()*6.28;const rr=R-1.5+rand(0,5);
+    rock(Math.cos(a)*rr,Math.sin(a)*rr,rand(0.6,1.2));}
+}
+
+/* =====================================================================
+   ANIMAL PIECE FACTORY — fully sculpted low-poly 3D creatures
+   (no flat textures/billboards — every piece is real geometry)
+   ===================================================================== */
+const GEO={
+  sph:(r,s=16)=>new THREE.SphereGeometry(r,s,Math.max(10,s-3)),
+  cone:(r,h,s=12)=>new THREE.ConeGeometry(r,h,s),
+  cyl:(rt,rb,h,s=18)=>new THREE.CylinderGeometry(rt,rb,h,s),
+  box:(w,h,d)=>new THREE.BoxGeometry(w,h,d)
+};
+function pmat(c,rough=0.78,metal=0.06){return new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal});}
+const goldMat=new THREE.MeshStandardMaterial({color:0xe6b450,metalness:.9,roughness:.25});
+function addPart(grp,geo,c,pos,scale,rot){
+  const mat=(c&&c.isMaterial)?c:pmat(c);
+  const m=new THREE.Mesh(geo,mat);
+  if(pos)m.position.set(pos[0],pos[1],pos[2]);
+  if(scale){if(typeof scale==='number')m.scale.setScalar(scale);else m.scale.set(scale[0],scale[1],scale[2]);}
+  if(rot)m.rotation.set(rot[0]||0,rot[1]||0,rot[2]||0);
+  m.castShadow=true;m.receiveShadow=true;grp.add(m);return m;
+}
+// side palettes — light (white army) vs dark (black army)
+// natural colours per species — lion gold, elephant grey, owl brown, etc.
+const SPECIES={
+  P:{fur1:0xf1efe7,fur2:0xd8d3c6,nose:0xe39aa6,eye:0x16120d},          // rabbit — white/grey
+  K:{fur1:0xd9a44d,fur2:0xc1843a,mane:0xa9682a,mane2:0x824d1c,eye:0x16120d}, // lion — golden
+  Q:{fur1:0x8c5d36,fur2:0x6d4622,eye:0x16120d},                        // bear — brown
+  R:{fur1:0x9ba2a9,fur2:0x7a8189,ivory:0xefe7d2,eye:0x16120d},         // elephant — grey
+  B:{fur1:0x9c7a4c,fur2:0x795b37,face:0xf3ecd8,beak:0xeaa233,eye:0x16120d}, // owl — brown
+  N:{fur1:0x9c6b3c,fur2:0x7c5026,mane2:0x3f2a18,eye:0x16120d}          // horse — chestnut
+};
+const CHECKER_DISC={light:{disc:0xeae1ca,discHi:0xf6efdc},dark:{disc:0x26211c,discHi:0x39322b}};
+function shade(hex,f,cool){const r=hex>>16&255,gg=hex>>8&255,b=hex&255;
+  let R=r*f,G=gg*f,B=b*f;
+  if(cool){R*=0.82;G*=0.92;B=Math.min(255,B+26);}
+  const cl=c=>Math.max(0,Math.min(255,Math.round(c)));
+  return (cl(R)<<16)|(cl(G)<<8)|cl(B);}
+function teamPalette(type,light){const base=SPECIES[type]||SPECIES.P;
+  if(light)return base;const out={};for(const k in base)out[k]=(k==='eye')?base[k]:shade(base[k],0.6,true);return out;}
+
+function buildRabbit(P){const g=new THREE.Group();
+  addPart(g,GEO.sph(0.19),P.fur1,[0,0.30,-0.02],[1,1.05,1.15]);
+  addPart(g,GEO.sph(0.14),P.fur1,[0,0.42,0.08],[1,1.1,1]);
+  addPart(g,GEO.sph(0.13),P.fur1,[0,0.61,0.12]);
+  addPart(g,GEO.sph(0.07),P.fur2,[0,0.575,0.21]);
+  addPart(g,GEO.sph(0.02),P.nose,[0,0.595,0.265]);
+  const ear=GEO.sph(0.06,10);
+  addPart(g,ear,P.fur1,[-0.07,0.82,0.08],[0.5,2.4,0.45],[0,0,0.13]);
+  addPart(g,ear,P.fur1,[0.07,0.82,0.08],[0.5,2.4,0.45],[0,0,-0.13]);
+  addPart(g,ear,P.nose,[-0.07,0.83,0.105],[0.28,2.0,0.28],[0,0,0.13]);
+  addPart(g,ear,P.nose,[0.07,0.83,0.105],[0.28,2.0,0.28],[0,0,-0.13]);
+  addPart(g,GEO.sph(0.024,8),P.eye,[-0.06,0.635,0.205]);
+  addPart(g,GEO.sph(0.024,8),P.eye,[0.06,0.635,0.205]);
+  addPart(g,GEO.sph(0.05),P.fur2,[-0.07,0.14,0.17],[1,0.8,1.5]);
+  addPart(g,GEO.sph(0.05),P.fur2,[0.07,0.14,0.17],[1,0.8,1.5]);
+  addPart(g,GEO.sph(0.06),P.fur2,[0,0.30,-0.22]);
+  return g;}
+
+function buildLion(P){const g=new THREE.Group();
+  addPart(g,GEO.sph(0.22,14),P.fur1,[0,0.34,-0.02],[1,1,1.15]);
+  addPart(g,GEO.sph(0.25,14),P.mane,[0,0.61,0.05],[1.05,1.05,0.95]);
+  const R=0.26,N=10;for(let i=0;i<N;i++){const a=i/N*Math.PI*2;
+    addPart(g,GEO.cone(0.055,0.17,6),P.mane2,[Math.cos(a)*R,0.61+Math.sin(a)*R,0.05],null,[0,0,a-Math.PI/2]);}
+  addPart(g,GEO.sph(0.16),P.fur1,[0,0.61,0.17]);
+  addPart(g,GEO.sph(0.085),P.fur2,[0,0.565,0.28]);
+  addPart(g,GEO.sph(0.024),P.eye,[0,0.58,0.355]);
+  addPart(g,GEO.sph(0.05),P.fur1,[-0.12,0.74,0.13]);
+  addPart(g,GEO.sph(0.05),P.fur1,[0.12,0.74,0.13]);
+  addPart(g,GEO.sph(0.027,8),P.eye,[-0.065,0.635,0.28]);
+  addPart(g,GEO.sph(0.027,8),P.eye,[0.065,0.635,0.28]);
+  addPart(g,GEO.cyl(0.10,0.115,0.06,12),goldMat,[0,0.83,0.14]);
+  for(let i=0;i<5;i++){addPart(g,GEO.cone(0.03,0.1,8),goldMat,[(i-2)*0.05,0.90,0.14]);}
+  for(const sx of[-0.13,0.13])for(const sz of[-0.12,0.14]){addPart(g,GEO.cyl(0.055,0.05,0.16,8),P.fur1,[sx,0.12,sz]);}
+  return g;}
+
+function buildBear(P){const g=new THREE.Group();
+  addPart(g,GEO.sph(0.24,14),P.fur1,[0,0.34,-0.02],[1,1.05,1.1]);
+  addPart(g,GEO.sph(0.17),P.fur1,[0,0.63,0.12]);
+  addPart(g,GEO.sph(0.07),P.fur1,[-0.13,0.77,0.08]);
+  addPart(g,GEO.sph(0.07),P.fur1,[0.13,0.77,0.08]);
+  addPart(g,GEO.sph(0.035),P.fur2,[-0.13,0.77,0.12]);
+  addPart(g,GEO.sph(0.035),P.fur2,[0.13,0.77,0.12]);
+  addPart(g,GEO.sph(0.09),P.fur2,[0,0.585,0.24]);
+  addPart(g,GEO.sph(0.03),P.eye,[0,0.60,0.32]);
+  addPart(g,GEO.sph(0.026,8),P.eye,[-0.07,0.66,0.24]);
+  addPart(g,GEO.sph(0.026,8),P.eye,[0.07,0.66,0.24]);
+  addPart(g,GEO.sph(0.07),P.fur1,[-0.21,0.32,0.07],[0.8,1.3,0.8]);
+  addPart(g,GEO.sph(0.07),P.fur1,[0.21,0.32,0.07],[0.8,1.3,0.8]);
+  addPart(g,GEO.cyl(0.085,0.1,0.05,12),goldMat,[0,0.83,0.1]);
+  for(let i=0;i<3;i++){addPart(g,GEO.cone(0.03,0.09,8),goldMat,[(i-1)*0.07,0.885,0.1]);}
+  for(const sx of[-0.13,0.13])for(const sz of[-0.1,0.14]){addPart(g,GEO.cyl(0.06,0.055,0.16,8),P.fur1,[sx,0.12,sz]);}
+  return g;}
+
+function buildElephant(P){const g=new THREE.Group();
+  addPart(g,GEO.sph(0.25,14),P.fur1,[0,0.36,-0.04],[1.05,1,1.05]);
+  addPart(g,GEO.sph(0.18),P.fur1,[0,0.55,0.16]);
+  addPart(g,GEO.sph(0.15,10),P.fur2,[-0.21,0.56,0.1],[0.42,1.1,0.2]);
+  addPart(g,GEO.sph(0.15,10),P.fur2,[0.21,0.56,0.1],[0.42,1.1,0.2]);
+  addPart(g,GEO.cyl(0.07,0.06,0.16,10),P.fur1,[0,0.46,0.31],null,[0.5,0,0]);
+  addPart(g,GEO.cyl(0.058,0.046,0.16,10),P.fur1,[0,0.34,0.37],null,[1.0,0,0]);
+  addPart(g,GEO.cyl(0.046,0.034,0.13,10),P.fur1,[0,0.235,0.385],null,[1.35,0,0]);
+  addPart(g,GEO.cone(0.026,0.14,8),P.ivory,[-0.085,0.40,0.30],null,[1.7,0,0.18]);
+  addPart(g,GEO.cone(0.026,0.14,8),P.ivory,[0.085,0.40,0.30],null,[1.7,0,-0.18]);
+  addPart(g,GEO.sph(0.024,8),P.eye,[-0.095,0.59,0.27]);
+  addPart(g,GEO.sph(0.024,8),P.eye,[0.095,0.59,0.27]);
+  for(const sx of[-0.14,0.14])for(const sz of[-0.13,0.13]){addPart(g,GEO.cyl(0.065,0.065,0.2,8),P.fur1,[sx,0.13,sz]);}
+  addPart(g,GEO.cyl(0.13,0.13,0.1,8),P.fur2,[0,0.68,-0.08]);
+  for(let i=0;i<4;i++){const a=i/4*Math.PI*2+0.4;addPart(g,GEO.box(0.05,0.07,0.05),P.fur2,[Math.cos(a)*0.1,0.76,-0.08+Math.sin(a)*0.1]);}
+  return g;}
+
+function buildOwl(P){const g=new THREE.Group();
+  addPart(g,GEO.sph(0.2,14),P.fur1,[0,0.42,0],[1,1.4,1]);
+  addPart(g,GEO.sph(0.13,12),P.fur2,[0,0.36,0.13],[1,1.5,0.5]);
+  addPart(g,GEO.sph(0.085,12),P.face,[-0.085,0.6,0.12]);
+  addPart(g,GEO.sph(0.085,12),P.face,[0.085,0.6,0.12]);
+  addPart(g,GEO.sph(0.045,10),P.eye,[-0.085,0.6,0.18]);
+  addPart(g,GEO.sph(0.045,10),P.eye,[0.085,0.6,0.18]);
+  addPart(g,GEO.cone(0.04,0.1,6),P.beak,[0,0.55,0.2],null,[1.5,0,0]);
+  addPart(g,GEO.cone(0.05,0.15,6),P.fur1,[-0.12,0.76,0.0],null,[0,0,0.32]);
+  addPart(g,GEO.cone(0.05,0.15,6),P.fur1,[0.12,0.76,0.0],null,[0,0,-0.32]);
+  addPart(g,GEO.sph(0.08,10),P.fur2,[-0.19,0.42,0.0],[0.45,1.5,0.85]);
+  addPart(g,GEO.sph(0.08,10),P.fur2,[0.19,0.42,0.0],[0.45,1.5,0.85]);
+  addPart(g,GEO.sph(0.04),P.beak,[-0.06,0.14,0.1]);
+  addPart(g,GEO.sph(0.04),P.beak,[0.06,0.14,0.1]);
+  return g;}
+
+function buildHorse(P){const g=new THREE.Group();
+  addPart(g,GEO.sph(0.18,12),P.fur1,[0,0.42,-0.05],[1.35,1,1.1]);
+  addPart(g,GEO.cyl(0.09,0.13,0.34,10),P.fur1,[0,0.62,0.1],null,[0.5,0,0]);
+  addPart(g,GEO.box(0.13,0.15,0.25),P.fur1,[0,0.8,0.27],null,[0.55,0,0]);
+  addPart(g,GEO.box(0.1,0.11,0.13),P.fur2,[0,0.71,0.4],null,[0.55,0,0]);
+  addPart(g,GEO.cone(0.04,0.1,6),P.fur1,[-0.05,0.95,0.16],null,[0,0,0.12]);
+  addPart(g,GEO.cone(0.04,0.1,6),P.fur1,[0.05,0.95,0.16],null,[0,0,-0.12]);
+  addPart(g,GEO.sph(0.022,8),P.eye,[-0.07,0.84,0.31]);
+  addPart(g,GEO.sph(0.022,8),P.eye,[0.07,0.84,0.31]);
+  addPart(g,GEO.sph(0.017,6),P.eye,[-0.03,0.665,0.46]);
+  addPart(g,GEO.sph(0.017,6),P.eye,[0.03,0.665,0.46]);
+  for(let i=0;i<6;i++){addPart(g,GEO.box(0.045,0.1,0.05),P.mane2,[0,0.64+i*0.045,0.04-i*0.022],null,[0.5,0,0]);}
+  for(const sx of[-0.1,0.1])for(const sz of[-0.16,0.12]){addPart(g,GEO.cyl(0.045,0.04,0.22,8),P.fur1,[sx,0.13,sz]);}
+  addPart(g,GEO.cyl(0.06,0.02,0.24,8),P.mane2,[0,0.34,-0.24],null,[-0.55,0,0]);
+  return g;}
+
+function buildChecker(P,isFox,king){const g=new THREE.Group();
+  addPart(g,GEO.cyl(0.34,0.36,0.16,28),P.disc,[0,0.08,0]);
+  addPart(g,GEO.cyl(0.27,0.27,0.05,28),P.discHi,[0,0.17,0]);
+  if(isFox){
+    addPart(g,GEO.sph(0.16,12),0xcf6a28,[0,0.34,0.04]);
+    addPart(g,GEO.sph(0.085),0xf0e6d2,[0,0.31,0.15],[1,0.8,1]);
+    addPart(g,GEO.sph(0.025),0x16120d,[0,0.31,0.235]);
+    addPart(g,GEO.cone(0.06,0.15,6),0xcf6a28,[-0.1,0.5,0.0],null,[0,0,0.32]);
+    addPart(g,GEO.cone(0.06,0.15,6),0xcf6a28,[0.1,0.5,0.0],null,[0,0,-0.32]);
+    addPart(g,GEO.cone(0.035,0.08,6),0xf0e6d2,[-0.1,0.5,0.02],null,[0,0,0.32]);
+    addPart(g,GEO.cone(0.035,0.08,6),0xf0e6d2,[0.1,0.5,0.02],null,[0,0,-0.32]);
+    addPart(g,GEO.sph(0.022,8),0x16120d,[-0.06,0.37,0.13]);
+    addPart(g,GEO.sph(0.022,8),0x16120d,[0.06,0.37,0.13]);
+  }else{
+    addPart(g,GEO.sph(0.16,12),0x6b5742,[0,0.33,0.02],[1,1.2,1]);
+    addPart(g,GEO.sph(0.06),0xf0ead8,[-0.07,0.36,0.12]);
+    addPart(g,GEO.sph(0.06),0xf0ead8,[0.07,0.36,0.12]);
+    addPart(g,GEO.sph(0.032,8),0x16120d,[-0.07,0.36,0.16]);
+    addPart(g,GEO.sph(0.032,8),0x16120d,[0.07,0.36,0.16]);
+    addPart(g,GEO.cone(0.03,0.07,6),0xeaa233,[0,0.31,0.16],null,[1.5,0,0]);
+    addPart(g,GEO.cone(0.05,0.12,6),0x6b5742,[-0.1,0.5,0.0],null,[0,0,0.32]);
+    addPart(g,GEO.cone(0.05,0.12,6),0x6b5742,[0.1,0.5,0.0],null,[0,0,-0.32]);
+  }
+  if(king){
+    addPart(g,GEO.cyl(0.085,0.1,0.05,12),goldMat,[0,0.6,0.02]);
+    for(let i=0;i<4;i++){addPart(g,GEO.cone(0.025,0.08,8),goldMat,[(i-1.5)*0.05,0.66,0.02]);}
+  }
+  return g;}
+
+function makePiece(type,light,mode,king){
+  const g=new THREE.Group();
+  const isChess=mode==='chess';
+  // strong team base platform — ivory marble (white) vs dark slate (black)
+  let baseTop=0.0;
+  if(isChess){
+    const baseCol=light?0xeee8d7:0x221d18, baseHi=light?0xfbf7ec:0x342d26;
+    const b1=new THREE.Mesh(GEO.cyl(0.36,0.40,0.10,28),pmat(baseCol,0.65,0.06));
+    b1.position.y=0.05;b1.castShadow=true;b1.receiveShadow=true;g.add(b1);
+    const b2=new THREE.Mesh(GEO.cyl(0.30,0.36,0.06,28),pmat(baseHi,0.5,0.1));
+    b2.position.y=0.12;b2.castShadow=true;b2.receiveShadow=true;g.add(b2);
+    baseTop=0.145;
+  }
+  // emissive team ring — gold (white) vs bright blue (dark): colour cue + selection glow
+  const ringMat=new THREE.MeshStandardMaterial({color:light?0xffd66b:0x5cb8ff,
+    emissive:light?0xffb43a:0x2f8fd8,emissiveIntensity:0.32,roughness:.35,metalness:.6});
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.37,0.04,12,30),ringMat);
+  ring.rotation.x=Math.PI/2;ring.position.y=isChess?0.02:0.03;g.add(ring);
+  let animal;
+  if(isChess){
+    const P=teamPalette(type,light);
+    animal = type==='P'?buildRabbit(P): type==='K'?buildLion(P): type==='Q'?buildBear(P):
+             type==='R'?buildElephant(P): type==='B'?buildOwl(P): buildHorse(P);
+  }else{
+    animal = buildChecker(light?CHECKER_DISC.light:CHECKER_DISC.dark,light,king);
+  }
+  // auto-ground: rest the model's lowest point on top of the base (or the board for checkers)
+  animal.updateMatrixWorld(true);
+  const bbox=new THREE.Box3().setFromObject(animal);
+  animal.position.y += (baseTop - bbox.min.y);
+  g.add(animal);
+  g.rotation.y = light?0:Math.PI;   // armies face each other
+  g.userData.ring=ring;
+  return g;
+}
+
+/* =====================================================================
+   5. GAME STATE & FLOW
+   ===================================================================== */
+const G={
+  mode:'chess', board:null, st:null, turn:'w',
+  sel:null, moves:[], over:false, ai:false, busy:false,
+  capW:[], capB:[], scoreW:0, scoreB:0,
+  forcedPiece:null // checkers multi-jump continuation
+};
+
+function newGame(){
+  G.over=false;G.sel=null;G.moves=[];G.busy=false;G.forcedPiece=null;
+  G.capW=[];G.capB=[];G.scoreW=0;G.scoreB=0;G.turn='w';
+  if(G.mode==='chess'){G.board=Chess.start();G.st={ep:null,castle:{wK:true,wQ:true,bK:true,bQ:true}};}
+  else{G.board=Checkers.start();G.st=null;}
+  hideBanner();renderPieces();renderTrays();updateTurnUI();updateLegend();
+}
+
+function renderPieces(){
+  while(pieceGroup.children.length)pieceGroup.remove(pieceGroup.children[0]);
+  for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=G.board[r][f];if(!p)continue;
+    const light=p.color==='w';
+    const m=(G.mode==='chess')?makePiece(p.type,light,'chess',false)
+                              :makePiece(null,light,'checkers',!!p.king);
+    const{x,z}=sqPos(r,f);m.position.set(x,0.12,z);
+    m.userData.r=r;m.userData.f=f;m.userData.color=p.color;
+    pieceGroup.add(m);
+  }
+}
+
+function clearMarkers(){while(markerGroup.children.length)markerGroup.remove(markerGroup.children[0]);}
+function showMarkers(){
+  clearMarkers();
+  if(G.sel){const{x,z}=sqPos(G.sel.r,G.sel.f);
+    const sel=new THREE.Mesh(new THREE.BoxGeometry(SQ*0.98,0.04,SQ*0.98),
+      new THREE.MeshBasicMaterial({color:0xffd86b,transparent:true,opacity:0.55}));
+    sel.position.set(x,0.135,z);markerGroup.add(sel);}
+  for(const mv of G.moves){const{x,z}=sqPos(mv.tr,mv.tf);
+    const cap=mv.cap||mv.cr!==undefined;
+    const dot=new THREE.Mesh(
+      cap?new THREE.TorusGeometry(0.34,0.06,8,20):new THREE.CylinderGeometry(0.16,0.16,0.06,16),
+      new THREE.MeshBasicMaterial({color:cap?0xff5a4a:0x7be08a,transparent:true,opacity:0.9}));
+    if(cap)dot.rotation.x=Math.PI/2;
+    dot.position.set(x,0.16,z);dot.userData.marker=true;markerGroup.add(dot);}
+}
+
+function legalFor(r,f){
+  if(G.mode==='chess')return Chess.legal(G.board,G.st,G.turn).filter(m=>m.fr===r&&m.ff===f);
+  const all=Checkers.legal(G.board,G.turn);
+  if(G.forcedPiece)return all.filter(m=>m.fr===G.forcedPiece.r&&m.ff===G.forcedPiece.f);
+  return all.filter(m=>m.fr===r&&m.ff===f);
+}
+
+/* ---- click handling ---- */
+function onPick(r,f){
+  if(G.over||G.busy)return;
+  if(G.ai&&G.turn==='b')return;
+  const p=G.board[r][f];
+  // try to complete a move to (r,f)
+  if(G.sel){
+    const mv=G.moves.find(m=>m.tr===r&&m.tf===f);
+    if(mv){doMove(mv);return;}
+  }
+  // select own piece
+  if(p&&p.color===G.turn){
+    if(G.forcedPiece&&(r!==G.forcedPiece.r||f!==G.forcedPiece.f))return;
+    const lm=legalFor(r,f);
+    if(lm.length){G.sel={r,f};G.moves=lm;Audio.play('select');showMarkers();}
+    return;
+  }
+  // deselect
+  if(!G.forcedPiece){G.sel=null;G.moves=[];clearMarkers();}
+}
+
+function animateMove(from,to,cb){
+  // find the piece mesh at 'from'
+  let mesh=pieceGroup.children.find(m=>m.userData.r===from.r&&m.userData.f===from.f);
+  if(!mesh){cb();return;}
+  const a=sqPos(from.r,from.f),b=sqPos(to.r,to.f);
+  G.busy=true;const dur=320,t0=performance.now();
+  (function step(){const t=Math.min(1,(performance.now()-t0)/dur);
+    const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    mesh.position.x=a.x+(b.x-a.x)*e;mesh.position.z=a.z+(b.z-a.z)*e;
+    mesh.position.y=0.12+Math.sin(t*Math.PI)*0.55; // hop
+    if(t<1)requestAnimationFrame(step);else{G.busy=false;cb();}})();
+}
+
+function doMove(mv){
+  clearMarkers();
+  const target=G.board[mv.tr][mv.tf];
+  const animal=animalAt(mv.fr,mv.ff);
+  animateMove({r:mv.fr,f:mv.ff},{r:mv.tr,f:mv.tf},()=>{
+    if(G.mode==='chess')applyChess(mv,target,animal);else applyCheckers(mv,animal);
+  });
+}
+function animalAt(r,f){const p=G.board[r][f];if(!p)return null;
+  return G.mode==='chess'?CHESS_ANIMALS[p.type]:CHECK_ANIMALS[p.color];}
+
+function applyChess(mv,target,animal){
+  const captured= mv.ep? G.board[mv.fr][mv.tf] : target;
+  const res=Chess.apply(G.board,G.st,mv);G.board=res.b;G.st=res.st;
+  G.sel=null;G.moves=[];
+  if(captured){addCapture(captured,'chess');Audio.play('capture');
+    setTimeout(()=>Audio.play(CHESS_ANIMALS[captured.type].name),110); // victim cries out
+    setTimeout(()=>Audio.play('laugh'),420);}                          // attacker gloats
+  else{Audio.play('move');setTimeout(()=>Audio.play(animal.name),90);}
+  renderPieces();
+  endTurnChess();
+}
+function endTurnChess(){
+  G.turn=G.turn==='w'?'b':'w';
+  const checked=Chess.inCheck(G.board,G.turn);
+  const moves=Chess.legal(G.board,G.st,G.turn);
+  if(moves.length===0){
+    if(checked){const w=G.turn==='w'?'Dark':'White';banner('Checkmate!',`${w} forest wins the kingdom! 👑`);Audio.play('win');}
+    else banner('Stalemate','A draw — the woods fall silent.');
+    G.over=true;updateTurnUI();return;
+  }
+  if(checked){Audio.play('check');flashStatus('Check!');}
+  updateTurnUI();
+  if(G.ai&&G.turn==='b')setTimeout(aiMove,520);
+}
+
+function applyCheckers(mv,animal){
+  const captured = mv.cr!==undefined ? G.board[mv.cr][mv.cf] : null;
+  G.board=Checkers.apply(G.board,mv);
+  if(captured){addCapture(captured,'checkers');Audio.play('capture');
+    setTimeout(()=>Audio.play(CHECK_ANIMALS[captured.color].name),110);
+    setTimeout(()=>Audio.play('laugh'),420);}
+  else{Audio.play('move');setTimeout(()=>Audio.play(animal.name),90);}
+  renderPieces();
+  // multi-jump continuation
+  if(captured){const more=Checkers.jumps(G.board,mv.tr,mv.tf);
+    if(more.length){G.forcedPiece={r:mv.tr,f:mv.tf};G.sel={r:mv.tr,f:mv.tf};G.moves=more;showMarkers();
+      flashStatus('Jump again!');
+      if(G.ai&&G.turn==='b')setTimeout(()=>doMove(more[bestJump(more)]),460);
+      return;}}
+  G.forcedPiece=null;G.sel=null;G.moves=[];
+  endTurnCheckers();
+}
+function endTurnCheckers(){
+  G.turn=G.turn==='w'?'b':'w';
+  const moves=Checkers.legal(G.board,G.turn);
+  // also lose if no pieces
+  let count=0;for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=G.board[r][f];if(p&&p.color===G.turn)count++;}
+  if(moves.length===0||count===0){const w=G.turn==='w'?'Dark':'White';
+    banner('Victory!',`${w} forest claims the glade! 🏆`);Audio.play('win');G.over=true;updateTurnUI();return;}
+  updateTurnUI();
+  if(G.ai&&G.turn==='b')setTimeout(aiMove,520);
+}
+
+/* ---- simple AI (greedy capture, else random) ---- */
+function bestJump(list){return Math.floor(Math.random()*list.length);}
+function aiMove(){
+  if(G.over)return;
+  if(G.mode==='chess'){
+    const moves=Chess.legal(G.board,G.st,'b');if(!moves.length)return;
+    // score: capture value + small center bias + promo
+    let best=-1e9,pick=moves[0];
+    for(const m of moves){let s=Math.random()*0.4;
+      const t=G.board[m.tr][m.tf];if(t)s+=VALUE[t.type]*10;
+      if(m.castle)s+=2; const dc=Math.abs(m.tf-3.5)+Math.abs(m.tr-3.5);s+=(7-dc)*0.15;
+      // avoid hanging into immediate recapture (1-ply look)
+      const{b:nb}=Chess.apply(G.board,G.st,m);
+      if(Chess.inCheck(nb,'w'))s+=1.5;
+      if(s>best){best=s;pick=m;}}
+    doMove(pick);
+  }else{
+    const moves=Checkers.legal(G.board,'b');if(!moves.length)return;
+    const caps=moves.filter(m=>m.cr!==undefined);
+    const pool=caps.length?caps:moves;doMove(pool[Math.floor(Math.random()*pool.length)]);
+  }
+}
+
+/* ---- captures / score ---- */
+function addCapture(p,mode){
+  const emoji = mode==='chess'?CHESS_ANIMALS[p.type].emoji:CHECK_ANIMALS[p.color].emoji;
+  const val = mode==='chess'?VALUE[p.type]:1;
+  if(p.color==='b'){G.capW.push(emoji);G.scoreW+=val;}else{G.capB.push(emoji);G.scoreB+=val;}
+  renderTrays();
+}
+function renderTrays(){
+  capW.innerHTML=G.capW.map(e=>`<span>${e}</span>`).join('');
+  capB.innerHTML=G.capB.map(e=>`<span>${e}</span>`).join('');
+  scoreW.textContent=G.scoreW;scoreB.textContent=G.scoreB;
+}
+
+/* =====================================================================
+   6. UI WIRING
+   ===================================================================== */
+const $=id=>document.getElementById(id);
+function updateTurnUI(){
+  const white=G.turn==='w';
+  $('turnDot').style.color=white?'#ffe9a8':'#6fd0ff';
+  $('turnDot').style.background=white?'#ffe9a8':'#6fd0ff';
+  let who=white?'White':'Dark';
+  if(G.ai&&!white)who='Computer (Dark)';
+  $('turnTxt').textContent=G.over?'Game over':`${who} to move`;
+}
+function flashStatus(t){const s=$('status');s.textContent=t;clearTimeout(s._t);
+  s._t=setTimeout(()=>s.textContent='',1400);}
+function banner(big,sub){$('bnBig').textContent=big;$('bnSub').textContent=sub;$('banner').classList.add('show');}
+function hideBanner(){$('banner').classList.remove('show');}
+function updateLegend(){
+  const body=$('legBody');
+  if(G.mode==='chess'){
+    $('legTitle').textContent='🐾 The Wild Court';
+    body.innerHTML=Object.entries(CHESS_ANIMALS).map(([k,a])=>
+      `<div class="legrow"><span class="em">${a.emoji}</span><span><b>${a.name}</b> = ${a.role}</span></div>`).join('');
+  }else{
+    $('legTitle').textContent='🔥 Glade Duel';
+    body.innerHTML=`<div class="legrow"><span class="em">🐺</span><span><b>Wolf</b> = White side</span></div>
+      <div class="legrow"><span class="em">🐅</span><span><b>Tiger</b> = Dark side</span></div>
+      <div class="legrow"><span class="em">👑</span><span><b>Crown</b> = Kinged</span></div>
+      <div style="font-size:11px;color:#9fb886;margin-top:6px;line-height:1.4">Captures are forced. Land on the far row to be crowned.</div>`;
+  }
+}
+
+function bindUI(){
+  $('mChess').onclick=()=>{G.mode='chess';$('mChess').classList.add('on');$('mCheck').classList.remove('on');newGame();};
+  $('mCheck').onclick=()=>{G.mode='checkers';$('mCheck').classList.add('on');$('mChess').classList.remove('on');newGame();};
+  $('resetBtn').onclick=newGame;
+  $('bnBtn').onclick=newGame;
+  $('sndBtn').onclick=function(){const on=!this.classList.contains('on');
+    this.classList.toggle('on',on);this.textContent=on?'🔊 Sound':'🔇 Muted';Audio.setOn(on);if(on)Audio.play('select');};
+  $('aiBtn').onclick=function(){G.ai=!G.ai;this.classList.toggle('on',G.ai);
+    this.textContent='🤖 vs Computer: '+(G.ai?'ON':'OFF');
+    if(G.ai&&G.turn==='b'&&!G.over)setTimeout(aiMove,400);};
+  // legend hover -> sound preview
+  $('legBody').addEventListener('click',e=>{const row=e.target.closest('.legrow');
+    if(row){const em=row.querySelector('.em').textContent;
+      const a=Object.values(CHESS_ANIMALS).find(x=>x.emoji===em)||Object.values(CHECK_ANIMALS).find(x=>x.emoji===em);
+      if(a)Audio.play(a.name);}});
+}
+
+/* =====================================================================
+   7. CAMERA CONTROLS + RAYCAST PICKING
+   ===================================================================== */
+function updateCamera(){
+  const{theta,phi,rad,tx,tz}=camOrbit;
+  camera.position.set(tx+rad*Math.sin(phi)*Math.cos(theta),rad*Math.cos(phi),tz+rad*Math.sin(phi)*Math.sin(theta));
+  camera.lookAt(tx,0,tz);
+}
+function bindControls(){
+  const el=renderer.domElement;
+  el.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,t:theta(),p:phi(),moved:false};});
+  el.addEventListener('pointermove',e=>{if(!drag)return;
+    const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(Math.abs(dx)+Math.abs(dy)>4)drag.moved=true;
+    camOrbit.theta=drag.t-dx*0.008;
+    camOrbit.phi=Math.max(0.25,Math.min(1.35,drag.p-dy*0.006));updateCamera();});
+  window.addEventListener('pointerup',e=>{
+    if(drag&&!drag.moved)pickAt(e.clientX,e.clientY);drag=null;});
+  el.addEventListener('wheel',e=>{e.preventDefault();
+    camOrbit.rad=Math.max(7,Math.min(22,camOrbit.rad+e.deltaY*0.01));updateCamera();},{passive:false});
+  function theta(){return camOrbit.theta;}function phi(){return camOrbit.phi;}
+}
+function pickAt(cx,cy){
+  Audio.init();
+  const rect=renderer.domElement.getBoundingClientRect();
+  mouse.x=((cx-rect.left)/rect.width)*2-1;mouse.y=-((cy-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  // check pieces first then squares
+  const pHits=raycaster.intersectObjects(pieceGroup.children,true);
+  for(const h of pHits){let o=h.object;while(o&&o.userData.r===undefined)o=o.parent;
+    if(o){onPick(o.userData.r,o.userData.f);return;}}
+  const sHits=raycaster.intersectObjects(boardGroup.children,false);
+  for(const h of sHits){if(h.object.userData.sq){onPick(h.object.userData.r,h.object.userData.f);return;}}
+}
+
+/* =====================================================================
+   8. RENDER LOOP — idle bob + selection glow on real 3D pieces
+   ===================================================================== */
+function animate(){
+  requestAnimationFrame(animate);clock.t+=0.016;
+  pieceGroup.children.forEach((m,i)=>{
+    if(m.userData.r===undefined)return;
+    const sel=G.sel&&G.sel.r===m.userData.r&&G.sel.f===m.userData.f;
+    const bob=Math.sin(clock.t*2+i)*0.02+(sel?Math.abs(Math.sin(clock.t*5))*0.16:0);
+    if(!G.busy)m.position.y=0.12+bob;
+    const ring=m.userData.ring;
+    if(ring)ring.material.emissiveIntensity=sel?0.95:0.22;
+  });
+  markerGroup.children.forEach(o=>{if(o.userData.marker)o.rotation.y+=0.04;});
+  renderer.render(scene,camera);
+}
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);});
+
+/* =====================================================================
+   9. BOOT
+   ===================================================================== */
+window.addEventListener('load',()=>{
+  setupScene();bindUI();newGame();updateLegend();
+  setTimeout(()=>$('loader').classList.add('hide'),700);
+});
+</script>
+</body>
+</html>
