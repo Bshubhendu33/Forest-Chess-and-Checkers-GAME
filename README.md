@@ -73,7 +73,7 @@ Two kingdoms clash: the **Light Kingdom** (Lion, Eagle) vs the **Shadow Kingdom*
 double-click index.html → game starts instantly
 
 # Option 2 — play in browser
-https://farhan-siddique-git.github.io/Animal-kingdom-Chess-
+https://github.com/Bshubhendu33/Forest-Chess-and-Checkers-GAME
 ```
 
 No server. No npm install. No build step.
