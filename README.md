@@ -6,7 +6,7 @@
 
 **🦁 🐅 🦅 🦉 🐘 🦊 🐎 🐗**
 
-### 👉 [Click Here to Play](https://farhan-siddique-git.github.io/Animal-kingdom-Chess-Game/) 👈
+### 👉 [Click Here to Play](https://bshubhendu33.github.io/Forest-Chess-and-Checkers-GAME/) 👈
 
 [![Play Now](https://img.shields.io/badge/▶%20Play%20Now-Live%20Game-c8a832?style=for-the-badge&labelColor=1a2e14)](https://farhan-siddique-git.github.io/Animal-kingdom-Chess-)
 [![View README](https://img.shields.io/badge/📖%20Visual%20README-README.html-4a7a44?style=for-the-badge&labelColor=1a2e14)](https://farhan-siddique-git.github.io/Animal-kingdom-Chess-/README.html)
